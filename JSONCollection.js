@@ -1,5 +1,4 @@
 var fs = require("fs");
-var uuid = require("uuid");
 
 var JSONCollection = module.exports = function(name) {
   this.filename = name + ".json";
