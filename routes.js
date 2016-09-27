@@ -45,7 +45,7 @@ function respondJSON(response, statusCode, data) {
 
 function respondError(response, error) {
   response.writeHead(500, { "Content-Type": "text/plain" });
-  response.end("Internal Server Error: ", error.toString());
+  response.end("Internal Server Error: " + error.toString());
 }
 
 function readStreamAsJSON(stream, callback) {

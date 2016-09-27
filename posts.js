@@ -1,5 +1,5 @@
 var JSONCollection = require("./JSONCollection");
-var Posts = new JSONCollection("posts");
+var Posts = new JSONCollection({ name: "posts", primaryKey: "slug" });
 
 module.exports = Posts;
 
@@ -18,7 +18,7 @@ Posts.insertPost = function(newPost, callback) {
         var n = posts.filter(function(post) {
           return base == post.slugBase;
         }).length;
-        if (n > 0) base += "-" + n;
+        if (n > 0) base += "-" + (n + 1);
       }
       
       newPost.slug = base;
@@ -39,6 +39,4 @@ var samplePost = { title: "Sample Post",
                    author: "Brett",
                    body: "abcdefghijklmnopqrstuvwxyz" };
 
-// Posts.insertPost(samplePost, function() {
-//   Posts.insertPost(samplePost);
-// });
+Posts.insertPost(samplePost, function(err) { if (err) { console.log("Error:", err); } });

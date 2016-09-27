@@ -1,26 +1,36 @@
 var fs = require("fs");
 
-var JSONCollection = module.exports = function(name) {
-  this.filename = name + ".json";
-  fs.writeFile(this.filename,
-               JSON.stringify([]),
-               { flag: "wx" },
-               function(err) {
-    if (err && !err.code == "EEXIST") {
-      console.error("There was an error", err);
-    }
-  });
+function JSONCollection(options) {
+  options = options || {};
+  this.filename = (options.name || "collection") + ".json";
+  this.primaryKey = options.primaryKey || "id";
+  this.init();
 };
 
-JSONCollection.prototype.findOne = function(slug, callback) {
-  fs.readFile(this.filename, "utf8", function(error, data) {
+JSONCollection.prototype.init = function() {
+  var currentId = 0,
+      collection = [];
+  
+  fs.writeFile(this.filename,
+               JSON.stringify({ currentId, collection }),
+               { flag: "wx" },
+    (err) => {
+      if (err && !err.code == "EEXIST") {
+        return console.log("There was an error:", err);
+      }
+    }
+  );
+};
+
+JSONCollection.prototype.findOne = function(key, callback) {
+  fs.readFile(this.filename, "utf8", (error, data) => {
     if (error) {
       callback(error);
     } else {
       var allData = JSON.parse(data);
       var found;
-      allData.some(function(doc) {
-        if (doc.slug === slug) {
+      allData.collection.some(function(doc) {
+        if (doc[this.primaryKey] === key) {
           found = doc;
           return true;
         }
@@ -35,14 +45,14 @@ JSONCollection.prototype.findOne = function(slug, callback) {
 };
 
 JSONCollection.prototype.find = function(search, callback) {
-  fs.readFile(this.filename, "utf8", function(error, data) {
+  fs.readFile(this.filename, "utf8", (error, data) => {
     if (error) {
       callback(error);
     } else {
       var keys = Object.keys(search);
       var allData = JSON.parse(data);
       var found;
-      allData.forEach(function(doc) {
+      allData.collection.forEach(function(doc) {
         if (!doc.deleted &&
             keys.every(function(key) {
             return (doc.hasOwnProperty(key) &&
@@ -58,30 +68,30 @@ JSONCollection.prototype.find = function(search, callback) {
 };
 
 JSONCollection.prototype.insert = function(doc, callback) {
-  var self = this;
-  fs.readFile(this.filename, "utf8", function(error, data) {
+  fs.readFile(this.filename, "utf8", (error, data) => {
       if (error) {
       callback(error);
     } else {
-      doc.id = uuid.v4();
+      var allData = JSON.parse(data);
+      
+      doc.id = allData.currentId;
       doc.createdAt = doc.updatedAt = new Date();
       doc.deleted = false;
       
-      var allData = JSON.parse(data);
-      allData.push(doc);
-      fs.writeFile(self.filename, JSON.stringify(allData), callback);
+      allData.collection.push(doc);
+      allData.currentId += 1;
+      fs.writeFile(this.filename, JSON.stringify(allData), callback);
     }
   });
 };
 
 JSONCollection.prototype.update = function(docId, updates, callback) {
-  var self = this;
-  fs.readFile(this.filename, "utf8", function(error, data) {
+  fs.readFile(this.filename, "utf8", (error, data) => {
     if (error) {
       callback(error);
     } else {
       var allData = JSON.parse(data);
-      if (!allData.some(function(doc) {
+      if (!allData.collection.some(function(doc) {
         if (doc.id === docId) {
           merge(doc, updates);
           doc.updatedAt = new Date();
@@ -90,7 +100,7 @@ JSONCollection.prototype.update = function(docId, updates, callback) {
       })) {
         callback(new Error("Not found"));
       } else {
-        fs.writeFile(self.filename, JSON.stringify(allData), callback);
+        fs.writeFile(this.filename, JSON.stringify(allData), callback);
       }
     }
   });
@@ -105,3 +115,5 @@ function merge(doc, other) {
       doc[property] = other[property];
   }
 }
+
+module.exports = JSONCollection;

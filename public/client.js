@@ -29,7 +29,8 @@ function renderPosts(data) {
   var list = document.createElement("ol");
   data.forEach(function(post) {
     var item = document.createElement("li");
-    item.textContent = "Title: " + post.title + "\n" +
+    item.textContent = "ID: " + post.id + "\n" +
+                       "Title: " + post.title + "\n" +
                        "Author: " + post.author + "\n" +
                        "Slug Base: " + post.slugBase + "\n" +
                        "Slug: " + post.slug + "\n" +
